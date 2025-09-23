@@ -1,2 +1,2 @@
-# hakopyapps
-Windows application for the Python API of the hakoniwa drone simulator
+# hakoapps
+Windows application for hakoniwa drone simulator
