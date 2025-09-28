@@ -1,5 +1,3 @@
-// hakoWinAppsDlg.h : ヘッダー ファイル
-//
 
 #pragma once
 #include <iostream>
@@ -15,7 +13,7 @@
 #include <afxext.h>  // CEditBrowseCtrl
 #include <thread>    // 追加
 #include <xlocbuf>
-#include <locale>  
+#include <locale>
 #include <codecvt>
 
 #include <shellapi.h> // ファイル先頭に追加
@@ -26,7 +24,7 @@ class ChakoWinAppsDlg : public CDialogEx
 {
   // コンストラクション
 public:
-  ChakoWinAppsDlg(CWnd* pParent = nullptr);	// 標準コンストラクター
+  ChakoWinAppsDlg(CWnd* pParent = nullptr); // 標準コンストラクター
 
   // ダイアログ データ
 #ifdef AFX_DESIGN_TIME
@@ -34,7 +32,7 @@ public:
 #endif
 
 protected:
-  virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV サポート
+  virtual void DoDataExchange(CDataExchange* pDX); // DDX/DDV サポート
 
   // 実装
 protected:
@@ -96,12 +94,21 @@ public:
     }
   }
 
+  void runPowerShellCommand2(const std::string& command, const std::string& directory) {
+    std::string fullCommand = "cd /d " + directory + " && start powershell -Command \"" + command + "\"";
+
+    int result = system(fullCommand.c_str());
+    if (result != 0) {
+      std::cerr << "Failed to execute PowerShell command: " << command << std::endl;
+    }
+  }
+
+
   void OpenInExplorer(const std::wstring& path) {
     ShellExecute(NULL, L"open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
   }
 
 public:
-  // msgを返さず、成功/失敗のみ返す
   bool BackupAndRenameDroneLog(const CString& srcName, const CString& dstName)
   {
     if (m_HakoWinPath.IsEmpty()) return false;
@@ -114,7 +121,6 @@ public:
     CString srcPath = base + srcName;
     CString dstPath = base + dstName;
 
-    // drone_log1 が存在する場合はバックアップ（リネームのみ）
     if (GetFileAttributes(dstPath) != INVALID_FILE_ATTRIBUTES) {
       int bakIdx = 1;
       CString bakPath;
@@ -130,14 +136,13 @@ public:
       }
     }
 
-    // drone_log0 → drone_log1 をSHFileOperationでコピー
     CString srcDoubleNull = srcPath + _T("\\");
     srcDoubleNull += _T('\0');
-    srcDoubleNull += _T('\0'); // ダブルヌル終端
+    srcDoubleNull += _T('\0');
 
     CString dstDoubleNull = dstPath;
     dstDoubleNull += _T('\0');
-    dstDoubleNull += _T('\0'); // ダブルヌル終端
+    dstDoubleNull += _T('\0');
 
     SHFILEOPSTRUCT fileOp = { 0 };
     fileOp.wFunc = FO_COPY;
@@ -154,7 +159,6 @@ public:
       OutputDebugString((CString)_T("SHFileOperationによるコピー失敗 (err=") + std::to_wstring(res).c_str() + _T("): ") + srcPath + _T(" -> ") + dstPath);
       return false;
     }
-
     return true;
   }
 };

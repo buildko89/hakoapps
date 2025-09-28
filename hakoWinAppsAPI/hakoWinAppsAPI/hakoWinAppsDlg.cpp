@@ -1,7 +1,4 @@
 
-// hakoWinAppsDlg.cpp : 実装ファイル
-//
-
 #include "pch.h"
 #include "framework.h"
 #include "hakoWinApps.h"
@@ -185,6 +182,7 @@ BOOL ChakoWinAppsDlg::OnInitDialog()
 
   m_HakoPyConf = szPath;
 
+  // mmapディレクトリの作成
   // iniファイルから mmap ディレクトリパスを取得
   TCHAR szMmapDir[MAX_PATH];
   GetPrivateProfileString(_T("hakoWinAppsAPI"),
@@ -204,11 +202,7 @@ BOOL ChakoWinAppsDlg::OnInitDialog()
     }
   }
 
-  // Pythonプログラムの初期値設定
-  m_HakoPyProg = m_HakoPyPath + _T("\\api_control_sample.py");
-
-
-
+  // mmap-0x100.binの作成
   // iniファイルからパスとサイズを取得
   TCHAR szFilePath[MAX_PATH];
   GetPrivateProfileString(_T("hakoWinAppsAPI"),
@@ -223,8 +217,30 @@ BOOL ChakoWinAppsDlg::OnInitDialog()
     5, // デフォルト値
     strFilePath);
 
-  // MB→バイト変換
-  size_t sizeInBytes = static_cast<size_t>(fileSizeMB) * 1024 * 1024;
+  // Pythonプログラムのパスと引数を指定
+  std::string directory = std::string(CT2A(m_HakoWinPath));
+
+  // Pythonコマンドを構築（INIから取得した値を使用）
+  std::string pycommand = "python make_zero_file.py \"" +
+    std::string(CT2A(szFilePath)) + "\" " +
+    std::to_string(fileSizeMB);
+
+  std::string command = "try { " + pycommand + " } catch { Write-Host 'Error:' $_; pause }";
+
+  // PowerShellコマンドを実行
+  runPowerShellCommand2(command, directory);
+
+
+  // hakoniwa-pdu package upgrade
+  pycommand = "pip install --upgrade hakoniwa-pdu";
+
+  command = "try { " + pycommand + " } catch { Write-Host 'Error:' $_; pause }";
+
+  // PowerShellコマンドを実行
+  runPowerShellCommand2(command, directory);
+
+  // Pythonプログラムの初期値設定
+  m_HakoPyProg = m_HakoPyPath + _T("\\api_control_sample.py");
 
   return TRUE;  // フォーカスをコントロールに設定した場合を除き、TRUE を返します。
 }
@@ -492,9 +508,16 @@ void ChakoWinAppsDlg::OnEnChangeMfceditbrowse3()
 void ChakoWinAppsDlg::OnBnClickedButton3()
 {
   // TODO: ここにコントロール通知ハンドラー コードを追加します。
+
   // 例: m_HakoWinPath が既に設定されていることが前提
-  if (!BackupAndRenameDroneLog(_T("drone_log0"), _T("drone_log1"))) {
-    AfxMessageBox(_T("ログフォルダのバックアップに失敗しました。"));
+
+  CString srcName = L"drone_log0";
+  CString dstName = L"drone_log1";
+
+  bool success = BackupAndRenameDroneLog(srcName, dstName);
+
+  if(!success){
+    AfxMessageBox(_T("ログファイルディレクトリの変換に失敗しました"));
     return;
   }
 
@@ -502,9 +525,10 @@ void ChakoWinAppsDlg::OnBnClickedButton3()
   std::string directory = std::string(CT2A(m_HakoWinPath));
 
   // replay用のjsonファイルを修正
-  std::string command = "python ./updatereplay_json.py ./drone_log1/drone_dynamics.csv ./config/replay/replay.json";
+  std::string pycommand = "python ./updatereplay_json.py ./drone_log1/drone_dynamics.csv ./config/replay/replay.json";
+  std::string command = "try { " + pycommand + " } catch { Write-Host 'Error:' $_; pause }";
   // PowerShellコマンドを実行
-  runPowerShellCommand(command, directory);
+  runPowerShellCommand2(command, directory);
 
   // PowerShellコマンドを構築
   command = "python -m replay.hako_asset_replayer --replay ./config/replay/replay.json";
