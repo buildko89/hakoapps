@@ -222,8 +222,8 @@ BOOL ChakoWinAppsDlg::OnInitDialog()
 
   // Pythonコマンドを構築（INIから取得した値を使用）
   std::string pycommand = "python make_zero_file.py \"" +
-    std::string(CT2A(szFilePath)) + "\" " +
-    std::to_string(fileSizeMB);
+  std::string(CT2A(szFilePath)) + "\" " +
+  std::to_string(fileSizeMB);
 
   std::string command = "try { " + pycommand + " } catch { Write-Host 'Error:' $_; pause }";
 
@@ -473,7 +473,7 @@ void ChakoWinAppsDlg::OnBnClickedButton4()
   if (pos >= 0) {
     fileName = fileName.Mid(pos + 1);
   }
-  // fileName には "api_control_sample.py" が格納される
+  // fileName には "Pythonプログラム" が格納される
   std::string pyFileName = std::string(CT2A(fileName));
 
   // CString → std::string へ変換して連結
@@ -502,6 +502,13 @@ void ChakoWinAppsDlg::OnEnChangeMfceditbrowse3()
   CString strPath;
   m_EditBrowseCtrl3.GetWindowText(strPath);
   m_HakoPyProg = strPath;
+
+  int pos1 = m_HakoPyProg.ReverseFind(_T('\\'));
+  if (pos1 != -1)
+  {
+    CString strDir = strPath.Left(pos1);        // ディレクトリ部分
+    m_HakoPyPath = strDir;
+  }
 
 }
 
